@@ -1,0 +1,128 @@
+#!/usr/bin/env python2
+
+    # imports
+import argparse
+import ConfigParser
+import os
+import subprocess
+
+    # command line
+ROOT_DEFAULT = "~"
+REPO_DEFAULT = "auto"
+
+def cl_parse():
+    clp = argparse.ArgumentParser()
+
+    clp.add_argument( "--root", default=ROOT_DEFAULT, dest="root", help="local synchronization root (default: '" + ROOT_DEFAULT + "')" )
+    clp.add_argument( "method", choices=["fetch", "push"], help="synchronization method" )
+    clp.add_argument( "repos", nargs="*", default=[REPO_DEFAULT], metavar="REPOSITORY", help="repository to synchronize (default: '" + REPO_DEFAULT + "')" )
+
+    return clp.parse_args()
+
+    # local sync site
+def local_site( cla ):
+    return cla.root
+
+def local_src( cla, cfg, repo ):
+    return os.path.join( local_site( cla ), repo )
+
+def local_dst( cla, cfg, repo ):
+    return os.path.normpath( os.path.join( local_site( cla ), os.path.dirname( repo ) ) )
+
+    # remote sync sites
+def remote_sites( cfg, repo ):
+    return map( str.strip, cfg.get( repo, "remotes" ).split( "," ) ) if cfg.has_option( repo, "remotes" ) else []
+
+def remote_src( cfg, repo, remote ):
+    return os.path.join( remote, repo )
+
+def remote_dst( cla, cfg, repo, remote ):
+    return os.path.normpath( os.path.join( remote, os.path.dirname( repo ) ) )
+
+    # repositories
+def repos_unique( repos ):
+    seen = set()
+    return [x for x in repos if not (x in seen or seen.add( x ))]
+
+def repos_detect( cla, cfg ):
+    repos = sorted( cfg.sections(), key=len, reverse=True )
+    for repo in repos:
+        if os.path.normpath( os.path.expanduser( local_src( cla, cfg, repo ) ) ) in os.getcwd():
+            return [repo]
+    return []
+
+    # rsync
+def rsync_cmd( cfg, repo, src, dst ):
+    rsc = "rsync -a -i --delete"
+
+    if "@" in dst:
+        rsc += " -e ssh -z"
+
+    if cfg.has_option( repo, "filters" ):
+        rules = map( str.strip, cfg.get( repo, "filters" ).split( "," ) )
+        for rule in rules:
+                rsc += " -f \"" + rule + "\""
+
+    rsc += " " + src
+    rsc += " " + dst
+
+    return rsc
+
+    # main
+if __name__ == "__main__":
+
+        # parse command line
+    cla = cl_parse()
+
+        # read config
+    cfg = ConfigParser.SafeConfigParser()
+    cfg.read( os.path.expanduser( os.path.join( cla.root, "nexus.conf" ) ) )
+
+        # prepare for special repositories
+    repos = cla.repos
+
+    while REPO_DEFAULT in repos:
+        repos[repos.index( REPO_DEFAULT ):repos.index( REPO_DEFAULT )] = repos_detect( cla, cfg )
+        del repos[repos.index( REPO_DEFAULT )]
+    while "all" in repos:
+        repos[repos.index( "all" ):repos.index( "all" )] = cfg.sections()
+        del repos[repos.index( "all" )]
+
+    repos = repos_unique( repos )
+
+        # proceed repositories
+    for repo in repos:
+
+            # check validity
+        if repo not in cfg.sections():
+            print( "REPOSITORY: " + repo )
+            print( "not found in 'nexus.conf'!" )
+            continue
+
+            # proceed remote sites
+        for remote in remote_sites( cfg, repo ):
+            print( "REPOSITORY:  " + repo )
+
+                # prepare sync source and destination
+            src = ""
+            dst = ""
+
+            if cla.method == "fetch":
+                src = remote_src( cfg, repo, remote )
+                dst = local_dst( cla, cfg, repo )
+
+            elif cla.method == "push":
+                src = local_src( cla, cfg, repo )
+                dst = remote_dst( cla, cfg, repo, remote )
+
+            print( "SOURCE:      " + src )
+            print( "DESTINATION: " + dst )
+
+                # sync
+            rsc = rsync_cmd( cfg, repo, src, dst )
+            print( rsc )
+
+            subprocess.call( rsc, shell=True )
+
+            print( "" ) # continue
+
