@@ -1,22 +1,24 @@
-Remote sync nexus
-=================
+# remote sync
 
-### Example configuration
+- config file uses file format similar to INI, semicolons indicate comments
+- repositories are specified by individual sections, eg., `[repo]`
+- `[DEFAULT]` section applies to all repositories
+- two section options are available: `remotes` and `filters`
+- multiple remotes or filters need to be separated by commas
+- trailing slashes in repository names matter
 
-	; defaults
-	[DEFAULT]
-	remotes: user@192.168.1.100:~/path
-	default_filters: - *.tmp, - *.swp
-	filters: %(default_filters)s
+# example configuration
 
-	; repositories
-	[config]
+``` 
+; repository defaults
+[DEFAULT]
+remotes: user@192.168.1.100:~/path
+default_filters: - *.tmp, - *.swp
+filters: %(default_filters)s
 
-	[ves]
-	build_filter: - build
-	filters: %(default_filters)s, %(build_filter)s
-
-	[diploma]
-	data_filter: - *.h5, - *.csv
-	filters: %(default_filters)s, %(data_filter)s
+; test repository
+[repo]
+repo_filter: - aux
+filters: %(default_filters)s, %(build_filter)s
+``` 
 

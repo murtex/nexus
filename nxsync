@@ -27,7 +27,8 @@ def local_src( cla, cfg, repo ):
     return os.path.join( local_site( cla ), repo )
 
 def local_dst( cla, cfg, repo ):
-    return os.path.normpath( os.path.join( local_site( cla ), os.path.dirname( repo ) ) )
+    #return os.path.normpath( os.path.join( local_site( cla ), os.path.dirname( repo ) ) )
+    return os.path.normpath( local_site( cla ) )
 
     # remote sync sites
 def remote_sites( cfg, repo ):
@@ -37,7 +38,8 @@ def remote_src( cfg, repo, remote ):
     return os.path.join( remote, repo )
 
 def remote_dst( cla, cfg, repo, remote ):
-    return os.path.normpath( os.path.join( remote, os.path.dirname( repo ) ) )
+    #return os.path.normpath( os.path.join( remote, os.path.dirname( repo ) ) )
+    return os.path.normpath( remote )
 
     # repositories
 def repos_unique( repos ):
@@ -53,7 +55,7 @@ def repos_detect( cla, cfg ):
 
     # rsync
 def rsync_cmd( cfg, repo, src, dst ):
-    rsc = "rsync -a -i -v -h --progress --delete"
+    rsc = "rsync -n -a -i -v -h --progress --delete"
 
     if "@" in dst:
         rsc += " -e ssh -z"
@@ -101,6 +103,7 @@ if __name__ == "__main__":
 
             # proceed remote sites
         for remote in remote_sites( cfg, repo ):
+            print( "------------------------------------------------------------------------------" )
             print( "REPOSITORY:  " + repo )
 
                 # prepare sync source and destination
