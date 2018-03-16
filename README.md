@@ -3,9 +3,10 @@
 - config file uses file format similar to INI, semicolons indicate comments
 - repositories are specified by individual sections, eg., `[repo]`
 - `[DEFAULT]` section applies to all repositories
-- two section options are available: `remotes` and `filters`
-- multiple remotes or filters need to be separated by commas
 - trailing slashes in repository names matter
+- multiple options need to be separated by commas, the following options are available
+	- `remotes`: (remote) destination(s)
+	- `filters`: rsync filter rule(s)
 
 # example configuration
 
