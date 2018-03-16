@@ -55,7 +55,7 @@ def repos_detect( cla, cfg ):
 
     # rsync
 def rsync_cmd( cfg, repo, src, dst ):
-    rsc = "rsync -n -a -i -v -h --progress --delete"
+    rsc = "rsync -a -i -v -h --progress --delete"
 
     if "@" in dst:
         rsc += " -e ssh -z"
