@@ -55,10 +55,11 @@ def repos_detect( cla, cfg ):
 
     # rsync
 def rsync_cmd( cfg, repo, src, dst ):
-    rsc = "rsync -a -i -v -h --progress --delete"
+    rsc = "rsync -avz -ih --progress --delete"
 
-    if "@" in dst:
-        rsc += " -e ssh -z"
+    userathost = dst.split( "@" )
+    if len( userathost ) > 1 and "/" not in userathost[0]:
+        rsc += " -e ssh"
 
     if cfg.has_option( repo, "filters" ):
         rules = map( str.strip, cfg.get( repo, "filters" ).split( "," ) )
